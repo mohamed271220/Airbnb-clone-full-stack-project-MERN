@@ -3,11 +3,12 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
+const Place = require('./models/Place')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser');
 const imageDownloader = require('image-downloader')
 const multer = require('multer')
-const fs= require('fs')
+const fs = require('fs')
 
 
 require('dotenv').config();
@@ -113,19 +114,63 @@ app.post('/upload-by-link', async (req, res) => {
 });
 
 
-const phostoMiddleware = multer({ dest:'uploads/'})
+const phostoMiddleware = multer({ dest: 'uploads/' })
 
-app.post('/upload',phostoMiddleware.array('photos',25) ,(req, res) => {
+app.post('/upload', phostoMiddleware.array('photos', 25), (req, res) => {
     console.log(req.files);
-    const uploadedFiles=[];
-    for(let i=0;i<req.files.length;i++){
-        const {path,originalname}=req.files[i];
-        const parts=originalname.split('.')
-        const ext= parts[parts.length -1];
-        const newPath=path+'.'+ext;
-        fs.renameSync(path,newPath)
-        uploadedFiles.push(newPath.replace('uploads/',''))
+    const uploadedFiles = [];
+    for (let i = 0; i < req.files.length; i++) {
+        const { path, originalname } = req.files[i];
+        const parts = originalname.split('.')
+        const ext = parts[parts.length - 1];
+        const newPath = path + '.' + ext;
+        fs.renameSync(path, newPath)
+        uploadedFiles.push(newPath.replace('uploads/', ''))
     }
     res.json(uploadedFiles)
 });
+
+
+app.post('/places', (req, res) => {
+    const { token } = req.cookies;
+    const { title,
+        address,
+        photos,
+        description,
+        perks,
+        extraInfo,
+        checkIn,
+        checkOut,
+        maxGuests } = req.body
+    jwt.verify(token, jwtSecret, {}, async (err, user) => {
+        if (err) throw err;
+        const placeDoc = await Place.create({
+            owner: user.id,
+            title,
+            address,
+            photos,
+            description,
+            perks,
+            extraInfo,
+            checkIn,
+            checkOut,
+            maxGuests
+        });
+        res.json(placeDoc)
+    });
+});
+/*
+    owner: {type:mongoose.Schema.Types.ObjectId, ref:"User"},
+    title,: String,
+    address,: String,
+    photos,: [String],
+    description,: String,
+    perks,: [String],
+    extraInfo,: String,
+    checkIn,: Number,
+    checkOut,: Number,
+    maxGuests,: Number,
+
+*/
+
 app.listen(4000);
