@@ -148,7 +148,7 @@ app.post('/places', (req, res) => {
             owner: user.id,
             title,
             address,
-            photos,
+            photos:photos,
             description,
             perks,
             extraInfo,
@@ -157,6 +157,16 @@ app.post('/places', (req, res) => {
             maxGuests
         });
         res.json(placeDoc)
+    });
+});
+
+
+app.get("/places",(req,res)=>{
+    const {token}= req.cookies;
+    jwt.verify(token, jwtSecret, {}, async (err, user) => {
+
+        const {id}=user;
+        res.json(await Place.find({owner:id}))
     });
 });
 /*
