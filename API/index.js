@@ -135,39 +135,67 @@ app.post('/places', (req, res) => {
     const { token } = req.cookies;
     const { title,
         address,
-        photos,
+        addedPhotos,
         description,
         perks,
         extraInfo,
         checkIn,
         checkOut,
-        maxGuests } = req.body
+        maxGuests,
+        price } = req.body
     jwt.verify(token, jwtSecret, {}, async (err, user) => {
         if (err) throw err;
         const placeDoc = await Place.create({
             owner: user.id,
             title,
             address,
-            photos:photos,
+            photos: addedPhotos,
             description,
             perks,
             extraInfo,
             checkIn,
             checkOut,
-            maxGuests
+            maxGuests,
+            price
         });
         res.json(placeDoc)
     });
 });
 
 
-app.get("/places",(req,res)=>{
-    const {token}= req.cookies;
+app.get("/user-places", (req, res) => {
+    const { token } = req.cookies;
     jwt.verify(token, jwtSecret, {}, async (err, user) => {
 
-        const {id}=user;
-        res.json(await Place.find({owner:id}))
+        const { id } = user;
+        res.json(await Place.find({ owner: id }))
     });
+});
+
+
+app.get("/places/:id", async (req, res) => {
+    const { id } = req.params;
+    res.json(await Place.findById(id));
+})
+
+app.put("/places", async (req, res) => {
+    const { token } = req.cookies;
+    const { id, title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price } = req.body;
+    jwt.verify(token, jwtSecret, {}, async (err, user) => {
+        if (err) throw err;
+        const placeDoc = await Place.findById(id);
+        if (user.id === placeDoc.owner.toString()) {
+            placeDoc.set({
+                title, address, photos: addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price
+            });
+            await placeDoc.save();
+            res.json('ok')
+        }
+    })
+})
+
+app.get('/places', async (req, res) => {
+    res.json(await Place.find());
 });
 /*
     owner: {type:mongoose.Schema.Types.ObjectId, ref:"User"},
